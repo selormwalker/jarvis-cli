@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import os
 import json
+import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,24 +17,38 @@ else:
 def parse_task_nl(user_input: str):
     """
     Uses AI to parse natural language input into structured task data.
+    Now includes smarter date and priority detection.
     """
     if not model:
         return {"title": user_input, "priority": "medium", "description": ""}
 
+    today = datetime.date.today().isoformat()
     prompt = f"""
-    Parse the following task description into a JSON object with 'title', 'priority' (low, medium, high), and 'description'.
-    Task: "{user_input}"
-    JSON:
+    You are a task management assistant. Parse the following user input into a structured JSON object.
+    The current date is {today}.
+    
+    User Input: "{user_input}"
+    
+    Expected JSON format:
+    {{
+        "title": "Short descriptive title",
+        "priority": "low" | "medium" | "high",
+        "due_date": "YYYY-MM-DD" (or null if not mentioned),
+        "description": "Any extra details found in the input"
+    }}
+    
+    Return ONLY the raw JSON object.
     """
     
-    response = model.generate_content(prompt)
     try:
-        # Simple extraction of JSON from response
+        response = model.generate_content(prompt)
         text = response.text
+        # Cleanup potential markdown formatting
         start = text.find('{')
         end = text.rfind('}') + 1
         return json.loads(text[start:end])
-    except:
+    except Exception as e:
+        print(f"AI Parsing Error: {e}")
         return {"title": user_input, "priority": "medium", "description": ""}
 
 def breakdown_task(task_title: str):
@@ -44,14 +59,14 @@ def breakdown_task(task_title: str):
         return []
 
     prompt = f"""
-    Break down the following complex task into 3-5 smaller, actionable subtasks.
+    Break down the following complex task into a list of 3-5 smaller, actionable subtasks.
     Task: "{task_title}"
-    Return the result as a JSON list of strings.
-    JSON:
+    
+    Return the result as a raw JSON list of strings: ["subtask 1", "subtask 2", ...]
     """
     
-    response = model.generate_content(prompt)
     try:
+        response = model.generate_content(prompt)
         text = response.text
         start = text.find('[')
         end = text.rfind(']') + 1

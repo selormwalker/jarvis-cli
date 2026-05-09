@@ -1,6 +1,7 @@
 import typer
 from rich.console import Console
 from rich.table import Table
+from datetime import datetime
 from .db import init_db, get_session, Task
 from .ai import parse_task_nl, breakdown_task
 
@@ -18,31 +19,42 @@ def callback():
 def add(task_input: str, auto_breakdown: bool = typer.Option(False, "--breakdown", "-b", help="Automatically break down complex tasks into subtasks")):
     """
     Add a new task using natural language.
-    Example: jarvis add "Buy milk tomorrow high priority"
+    Example: jarvis add "Prepare for meeting with team tomorrow morning high priority"
     """
-    with console.status("[bold green]Jarvis is thinking..."):
+    with console.status("[bold green]Jarvis is processing your request..."):
         parsed = parse_task_nl(task_input)
         
     session = get_session()
+    
+    # Handle due_date parsing
+    due_date_obj = None
+    if parsed.get("due_date"):
+        try:
+            due_date_obj = datetime.strptime(parsed["due_date"], "%Y-%m-%d")
+        except:
+            pass
+
     new_task = Task(
         title=parsed.get("title", task_input),
         priority=parsed.get("priority", "medium"),
-        description=parsed.get("description", "")
+        description=parsed.get("description", ""),
+        due_date=due_date_obj
     )
     session.add(new_task)
     session.commit()
     
-    console.print(f"[bold green]✔ Main Task Added:[/bold green] {new_task.title} ({new_task.priority} priority)")
+    date_str = f" [dim](Due: {parsed['due_date']})[/dim]" if parsed.get("due_date") else ""
+    console.print(f"[bold green]✔ Added:[/bold green] {new_task.title} [{new_task.priority.upper()}]{date_str}")
     
     if auto_breakdown:
-        with console.status("[bold blue]Breaking down task into subtasks..."):
+        with console.status("[bold blue]Generating subtasks..."):
             subtasks = breakdown_task(new_task.title)
             for st_title in subtasks:
                 sub_task = Task(title=st_title, parent_id=new_task.id)
                 session.add(sub_task)
             session.commit()
             if subtasks:
-                console.print(f"[bold blue]↳ Added {len(subtasks)} subtasks automatically.[/bold blue]")
+                console.print(f"[bold blue]↳ Intelligently generated {len(subtasks)} subtasks.[/bold blue]")
 
 @app.command()
 def list():
@@ -51,21 +63,28 @@ def list():
     tasks = session.query(Task).filter(Task.parent_id == None).all()
     
     if not tasks:
-        console.print("[yellow]No tasks found. Try adding one with 'add'.[/yellow]")
+        console.print("[yellow]Your task list is empty. Jarvis is ready for new tasks![/yellow]")
         return
 
-    table = Table(title="Jarvis Tasks")
-    table.add_column("ID", style="dim", width=6)
-    table.add_column("Task", style="cyan")
-    table.add_column("Priority", style="magenta")
-    table.add_column("Status", style="green")
+    table = Table(title="Jarvis Executive Task Overview", show_header=True, header_style="bold blue")
+    table.add_column("ID", style="dim", width=4)
+    table.add_column("Task", style="white")
+    table.add_column("Priority", justify="center")
+    table.add_column("Due Date", justify="center", style="dim")
+    table.add_column("Status", justify="right")
 
     for task in tasks:
-        table.add_row(str(task.id), task.title, task.priority, task.status)
-        # Show subtasks with indentation
+        p_style = "red" if task.priority == "high" else "yellow" if task.priority == "medium" else "green"
+        due_str = task.due_date.strftime("%Y-%m-%d") if task.due_date else "-"
+        status_str = "[bold green]DONE[/bold green]" if task.status == "done" else "[yellow]TODO[/yellow]"
+        
+        table.add_row(str(task.id), task.title, f"[{p_style}]{task.priority.upper()}[/{p_style}]", due_str, status_str)
+        
+        # Show subtasks
         subtasks = session.query(Task).filter(Task.parent_id == task.id).all()
         for sub in subtasks:
-            table.add_row(f"  └ {sub.id}", f"[dim]{sub.title}[/dim]", "-", sub.status)
+            sub_status = "✓" if sub.status == "done" else "○"
+            table.add_row(f"  {sub.id}", f"  [dim]└ {sub.title}[/dim]", "-", "-", f"[dim]{sub_status}[/dim]")
 
     console.print(table)
 
@@ -77,9 +96,17 @@ def done(task_id: int):
     if task:
         task.status = "done"
         session.commit()
-        console.print(f"[bold green]Task {task_id} marked as done.[/bold green]")
+        console.print(f"[bold green]✔ Task {task_id} completed. Well done![/bold green]")
     else:
-        console.print(f"[bold red]Task {task_id} not found.[/bold red]")
+        console.print(f"[bold red]✘ Task {task_id} not found.[/bold red]")
+
+@app.command()
+def clear():
+    """Clear all completed tasks."""
+    session = get_session()
+    deleted = session.query(Task).filter(Task.status == "done").delete()
+    session.commit()
+    console.print(f"[bold yellow]Purged {deleted} completed tasks from database.[/bold yellow]")
 
 if __name__ == "__main__":
     app()
