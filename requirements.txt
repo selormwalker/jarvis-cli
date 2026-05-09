@@ -1,0 +1,6 @@
+typer[all]
+rich
+google-generativeai
+sqlalchemy
+pytest
+python-dotenv
