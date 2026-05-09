@@ -1,9 +1,10 @@
 import typer
+import json
 from rich.console import Console
 from rich.table import Table
 from datetime import datetime
 from .db import init_db, get_session, Task
-from .ai import parse_task_nl, breakdown_task
+from .ai import parse_task_nl, breakdown_task, filter_tasks_nl
 
 app = typer.Typer()
 console = Console()
@@ -99,6 +100,49 @@ def done(task_id: int):
         console.print(f"[bold green]✔ Task {task_id} completed. Well done![/bold green]")
     else:
         console.print(f"[bold red]✘ Task {task_id} not found.[/bold red]")
+
+@app.command()
+def query(text: str):
+    """
+    Search and filter tasks using natural language.
+    Example: jarvis query "What are my high priority tasks?"
+    """
+    session = get_session()
+    all_tasks = session.query(Task).all()
+    
+    # Convert tasks to simple JSON for AI processing
+    task_data = []
+    for t in all_tasks:
+        task_data.append({
+            "id": t.id,
+            "title": t.title,
+            "priority": t.priority,
+            "due_date": t.due_date.strftime("%Y-%m-%d") if t.due_date else "none",
+            "status": t.status
+        })
+    
+    with console.status("[bold green]Jarvis is searching..."):
+        matching_ids = filter_tasks_nl(text, json.dumps(task_data))
+    
+    if not matching_ids:
+        console.print("[yellow]No tasks found matching your query.[/yellow]")
+        return
+
+    table = Table(title=f"Search Results for: {text}", show_header=True, header_style="bold blue")
+    table.add_column("ID", style="dim", width=4)
+    table.add_column("Task", style="white")
+    table.add_column("Priority", justify="center")
+    table.add_column("Due Date", justify="center", style="dim")
+    table.add_column("Status", justify="right")
+
+    for t in all_tasks:
+        if t.id in matching_ids:
+            p_style = "red" if t.priority == "high" else "yellow" if t.priority == "medium" else "green"
+            due_str = t.due_date.strftime("%Y-%m-%d") if t.due_date else "-"
+            status_str = "[bold green]DONE[/bold green]" if t.status == "done" else "[yellow]TODO[/yellow]"
+            table.add_row(str(t.id), t.title, f"[{p_style}]{t.priority.upper()}[/{p_style}]", due_str, status_str)
+
+    console.print(table)
 
 @app.command()
 def clear():

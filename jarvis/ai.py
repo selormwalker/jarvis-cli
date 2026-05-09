@@ -73,3 +73,30 @@ def breakdown_task(task_title: str):
         return json.loads(text[start:end])
     except:
         return []
+
+def filter_tasks_nl(query: str, task_list_json: str):
+    """
+    Uses AI to filter a list of tasks based on a natural language query.
+    """
+    if not model:
+        return []
+
+    prompt = f"""
+    You are a task management assistant. Filter the following list of tasks based on the user's query.
+    
+    Query: "{query}"
+    Tasks:
+    {task_list_json}
+    
+    Return the IDs of the matching tasks as a raw JSON list of integers.
+    If no tasks match, return an empty list [].
+    """
+    
+    try:
+        response = model.generate_content(prompt)
+        text = response.text
+        start = text.find('[')
+        end = text.rfind(']') + 1
+        return json.loads(text[start:end])
+    except:
+        return []
