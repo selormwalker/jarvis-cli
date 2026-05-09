@@ -20,9 +20,10 @@ jobs:
 
       - name: Commit and Push
         run: |
-          git config --global user.name "Selorm Walker"
-          git config --global user.email "selormwalker@example.com"
+          git config --global user.name "selormwalker"
+          git config --global user.email "juniorkwamewalker@gmail.com"
           git add ACTIVITY.md
           git commit -m "chore: daily activity update [skip ci]" || echo "No changes to commit"
           git push
+
 
