@@ -104,3 +104,6 @@ ACTIVITY: Implemented high-throughput data streaming handlers for real-time proc
 TIMESTAMP: Tue May 12 08:06:01 UTC 2026
 ACTIVITY: Identified and resolved a critical memory bottleneck in the background service.
 ---
+TIMESTAMP: Tue May 12 10:43:22 UTC 2026
+ACTIVITY: Updated the technical architecture docs to reflect recent infrastructure changes.
+---
