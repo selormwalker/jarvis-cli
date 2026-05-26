@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 import os
 import json
 import datetime
@@ -6,20 +6,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure the Gemini API
+# Configure the Gemini API using the new google-genai SDK
 api_key = os.getenv("GEMINI_API_KEY")
+MODEL_ID = 'gemini-1.5-flash'
+
 if api_key:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    client = genai.Client(api_key=api_key)
 else:
-    model = None
+    client = None
 
 def parse_task_nl(user_input: str):
     """
     Uses AI to parse natural language input into structured task data.
-    Now includes smarter date and priority detection.
     """
-    if not model:
+    if not client:
         return {"title": user_input, "priority": "medium", "description": ""}
 
     today = datetime.date.today().isoformat()
@@ -41,7 +41,7 @@ def parse_task_nl(user_input: str):
     """
     
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model=MODEL_ID, contents=prompt)
         text = response.text
         # Cleanup potential markdown formatting
         start = text.find('{')
@@ -55,7 +55,7 @@ def breakdown_task(task_title: str):
     """
     Uses AI to break down a complex task into smaller actionable subtasks.
     """
-    if not model:
+    if not client:
         return []
 
     prompt = f"""
@@ -66,7 +66,7 @@ def breakdown_task(task_title: str):
     """
     
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model=MODEL_ID, contents=prompt)
         text = response.text
         start = text.find('[')
         end = text.rfind(']') + 1
@@ -78,7 +78,7 @@ def filter_tasks_nl(query: str, task_list_json: str):
     """
     Uses AI to filter a list of tasks based on a natural language query.
     """
-    if not model:
+    if not client:
         return []
 
     prompt = f"""
@@ -93,7 +93,7 @@ def filter_tasks_nl(query: str, task_list_json: str):
     """
     
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model=MODEL_ID, contents=prompt)
         text = response.text
         start = text.find('[')
         end = text.rfind(']') + 1

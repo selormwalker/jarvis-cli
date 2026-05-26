@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base, backref
 import datetime
 
 Base = declarative_base()
@@ -14,10 +13,10 @@ class Task(Base):
     priority = Column(String, default="medium") # low, medium, high
     status = Column(String, default="todo") # todo, in_progress, done
     due_date = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     
     parent_id = Column(Integer, ForeignKey('tasks.id'))
-    subtasks = relationship("Task", backref=ForeignKey('tasks.id'), remote_side=[id])
+    subtasks = relationship("Task", backref=backref('parent', remote_side=[id]))
 
 engine = create_engine('sqlite:///jarvis.db')
 Session = sessionmaker(bind=engine)

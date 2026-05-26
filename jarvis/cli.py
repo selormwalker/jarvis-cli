@@ -75,14 +75,19 @@ def list():
     table.add_column("Status", justify="right")
 
     for task in tasks:
+        # Show subtasks and calculate progress
+        subtasks = session.query(Task).filter(Task.parent_id == task.id).all()
+        progress = ""
+        if subtasks:
+            done_count = sum(1 for s in subtasks if s.status == "done")
+            progress = f" [dim]({done_count}/{len(subtasks)})[/dim]"
+
         p_style = "red" if task.priority == "high" else "yellow" if task.priority == "medium" else "green"
         due_str = task.due_date.strftime("%Y-%m-%d") if task.due_date else "-"
         status_str = "[bold green]DONE[/bold green]" if task.status == "done" else "[yellow]TODO[/yellow]"
         
-        table.add_row(str(task.id), task.title, f"[{p_style}]{task.priority.upper()}[/{p_style}]", due_str, status_str)
+        table.add_row(str(task.id), task.title + progress, f"[{p_style}]{task.priority.upper()}[/{p_style}]", due_str, status_str)
         
-        # Show subtasks
-        subtasks = session.query(Task).filter(Task.parent_id == task.id).all()
         for sub in subtasks:
             sub_status = "✓" if sub.status == "done" else "○"
             table.add_row(f"  {sub.id}", f"  [dim]└ {sub.title}[/dim]", "-", "-", f"[dim]{sub_status}[/dim]")
@@ -90,14 +95,30 @@ def list():
     console.print(table)
 
 @app.command()
-def done(task_id: int):
+def done(task_id: int, recursive: bool = typer.Option(False, "--recursive", "-r", help="Mark all subtasks as done")):
     """Mark a task as completed."""
     session = get_session()
     task = session.query(Task).filter(Task.id == task_id).first()
     if task:
         task.status = "done"
+        if recursive:
+            session.query(Task).filter(Task.parent_id == task_id).update({"status": "done"})
         session.commit()
         console.print(f"[bold green]✔ Task {task_id} completed. Well done![/bold green]")
+    else:
+        console.print(f"[bold red]✘ Task {task_id} not found.[/bold red]")
+
+@app.command()
+def delete(task_id: int):
+    """Delete a task and its subtasks."""
+    session = get_session()
+    task = session.query(Task).filter(Task.id == task_id).first()
+    if task:
+        # Also delete subtasks
+        session.query(Task).filter(Task.parent_id == task_id).delete()
+        session.delete(task)
+        session.commit()
+        console.print(f"[bold red]✘ Task {task_id} and its subtasks deleted.[/bold red]")
     else:
         console.print(f"[bold red]✘ Task {task_id} not found.[/bold red]")
 
