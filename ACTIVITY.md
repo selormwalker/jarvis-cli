@@ -572,3 +572,6 @@ ACTIVITY: Patched a potential race condition in the asynchronous task scheduler.
 TIMESTAMP: Mon May 25 23:34:36 UTC 2026
 ACTIVITY: Added a new high-performance optimization layer to the core engine.
 ---
+TIMESTAMP: Tue May 26 01:28:28 UTC 2026
+ACTIVITY: Updated the technical architecture docs to reflect recent infrastructure changes.
+---
