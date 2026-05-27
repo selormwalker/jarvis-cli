@@ -599,3 +599,6 @@ ACTIVITY: Identified and resolved a critical memory bottleneck in the background
 TIMESTAMP: Wed May 27 00:01:22 UTC 2026
 ACTIVITY: Refactored shared utility modules for better maintainability and reuse.
 ---
+TIMESTAMP: Wed May 27 04:52:17 UTC 2026
+ACTIVITY: Updated the technical architecture docs to reflect recent infrastructure changes.
+---
