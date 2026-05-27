@@ -1,2 +1,13 @@
+[project]
+name = "jarvis-cli"
+version = "0.1.0"
+dependencies = [
+    "typer",
+    "rich",
+    "google-genai",
+    "sqlalchemy",
+    "python-dotenv"
+]
+
 [tool.vercel]
 entrypoint = "jarvis.cli:app"
