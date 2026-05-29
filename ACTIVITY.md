@@ -650,3 +650,6 @@ ACTIVITY: Refactored shared utility modules for better maintainability and reuse
 TIMESTAMP: Fri May 29 04:49:01 UTC 2026
 ACTIVITY: Streamlined the database persistence layer for faster read/write operations.
 ---
+TIMESTAMP: Fri May 29 08:39:51 UTC 2026
+ACTIVITY: Updated the technical architecture docs to reflect recent infrastructure changes.
+---
