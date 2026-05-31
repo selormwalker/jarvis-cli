@@ -34,6 +34,7 @@ def parse_task_nl(user_input: str):
         "title": "Short descriptive title",
         "priority": "low" | "medium" | "high",
         "due_date": "YYYY-MM-DD" (or null if not mentioned),
+        "tags": ["tag1", "tag2"] (empty list if none),
         "description": "Any extra details found in the input"
     }}
     
@@ -46,10 +47,16 @@ def parse_task_nl(user_input: str):
         # Cleanup potential markdown formatting
         start = text.find('{')
         end = text.rfind('}') + 1
-        return json.loads(text[start:end])
+        data = json.loads(text[start:end])
+        # Ensure tags is a list
+        if "tags" in data and isinstance(data["tags"], list):
+            data["tags"] = ",".join(data["tags"])
+        else:
+            data["tags"] = ""
+        return data
     except Exception as e:
         print(f"AI Parsing Error: {e}")
-        return {"title": user_input, "priority": "medium", "description": ""}
+        return {"title": user_input, "priority": "medium", "description": "", "tags": ""}
 
 def breakdown_task(task_title: str):
     """

@@ -12,6 +12,8 @@ class Task(Base):
     description = Column(String)
     priority = Column(String, default="medium") # low, medium, high
     status = Column(String, default="todo") # todo, in_progress, done
+    tags = Column(String) # Comma-separated tags
+    reminder_sent = Column(Boolean, default=False)
     due_date = Column(DateTime)
     created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     

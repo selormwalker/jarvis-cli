@@ -1,0 +1,7 @@
+Error reviewing .\jarvis\ai.py: 'NoneType' object has no attribute 'models'
+Error reviewing .\jarvis\cli.py: 'NoneType' object has no attribute 'models'
+Error reviewing .\jarvis\db.py: 'NoneType' object has no attribute 'models'
+Error reviewing .\tests\test_ai.py: 'NoneType' object has no attribute 'models'
+Error reviewing .\tests\test_cli.py: 'NoneType' object has no attribute 
+'models'
+Error reviewing .\tests\test_db.py: 'NoneType' object has no attribute 'models'
